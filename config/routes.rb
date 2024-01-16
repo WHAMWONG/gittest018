@@ -15,10 +15,11 @@ Rails.application.routes.draw do
   # New route from the new code
   post '/api/todos/:todo_id/categories', to: 'api/todos#link_categories'
 
-  # Existing namespace block from the existing code
+  # Merged namespace block from both the existing and new code
   namespace :api do
     resources :todos, only: [:create]
-    get '/todos/:id/confirm_delete', to: 'todos#confirm_delete'
+    delete '/todos/:id', to: 'todos#destroy' # Existing route from the existing code
+    get '/todos/:id/confirm_delete', to: 'todos#confirm_delete' # Existing route from the existing code
   end
 
   # ... other routes ...

@@ -1,4 +1,3 @@
-
 class TodoPolicy < ApplicationPolicy
   attr_reader :user, :todo
 
@@ -18,8 +17,12 @@ class TodoPolicy < ApplicationPolicy
     !user.nil?
   end
 
-  def confirm_delete?
-    user.id == todo.user_id
+  def destroy?
+    # Check if the current user is the owner of the To-Do item
+    todo.user_id == user.id
   end
 
+  # The existing code has a method `confirm_delete?` which seems to be doing the same thing as `destroy?`.
+  # To resolve the conflict, we can alias `confirm_delete?` to `destroy?` to keep the existing code working.
+  alias_method :confirm_delete?, :destroy?
 end

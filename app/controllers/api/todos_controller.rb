@@ -1,7 +1,7 @@
 module Api
   class TodosController < Api::BaseController
     before_action :doorkeeper_authorize!
-    before_action :set_todo, only: [:create_attachments, :link_categories]
+    before_action :set_todo, only: [:create_attachments, :link_categories, :destroy]
 
     # POST /api/todos
     def create
@@ -81,6 +81,25 @@ module Api
           render json: { error: message }, status: :bad_request
         end
       end
+    end
+
+    # DELETE /api/todos/:id
+    def destroy
+      todo = Todo.find_by(id: params[:id])
+      return render json: { error: "Wrong format." }, status: :bad_request unless params[:id].is_a?(Numeric)
+      return render json: { error: "This To-Do item is not found." }, status: :not_found unless todo
+
+      authorize todo, policy_class: TodoPolicy
+
+      result = TodoService::Delete.new(todo.id, current_resource_owner).call
+
+      if result[:success]
+        render json: { status: 200, message: result[:message] }, status: :ok
+      else
+        render json: { error: result[:message] }, status: :bad_request
+      end
+    rescue Pundit::NotAuthorizedError
+      render json: { error: "User does not have permission to access the resource." }, status: :forbidden
     end
 
     # GET /api/todos/:id/confirm_delete
