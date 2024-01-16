@@ -22,6 +22,29 @@ module Api
       render json: { error: e.message }, status: :unauthorized
     end
 
+    def validate
+      validator = ValidateTodoDetailsService.new(
+        title: params[:title],
+        due_date: params[:due_date],
+        user_id: current_resource_owner.id
+      )
+
+      is_valid, message = validator.call
+
+      if is_valid
+        render json: { status: 200, message: 'Todo details are valid.' }, status: :ok
+      else
+        case message
+        when I18n.t('activerecord.errors.messages.taken')
+          render json: { error: message }, status: :conflict
+        when I18n.t('activerecord.errors.messages.invalid'), I18n.t('activerecord.errors.messages.datetime_in_past')
+          render json: { error: message }, status: :unprocessable_entity
+        else
+          render json: { error: message }, status: :bad_request
+        end
+      end
+    end
+
     private
 
     def create_params
