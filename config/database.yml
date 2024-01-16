@@ -1,6 +1,8 @@
+
 # PostgreSQL. Versions 9.3 and up are supported.
 #
 # Install the pg driver:
+#   gem install pg
 #   gem install pg
 # On macOS with Homebrew:
 #   gem install pg -- --with-pg-config=/usr/local/bin/pg_config
@@ -53,6 +55,8 @@ development:
   #   log, notice, warning, error, fatal, and panic
   # Defaults to warning.
   #min_messages: notice
+
++
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
