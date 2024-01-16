@@ -1,6 +1,6 @@
 module Api
   class TodosController < Api::BaseController
-    before_action :doorkeeper_authorize!
+    before_action :doorkeeper_authorize!, except: [:log_deletion]
     before_action :set_todo, only: [:create_attachments, :link_categories, :destroy]
 
     # POST /api/todos
@@ -81,6 +81,36 @@ module Api
           render json: { error: message }, status: :bad_request
         end
       end
+    end
+
+    # POST /api/audit_logs
+    def log_deletion
+      authorize TodoPolicy.new(current_resource_owner, nil), :create?
+
+      user_id = params[:user_id]
+      action = params[:action]
+      entity_type = params[:entity_type]
+      entity_id = params[:entity_id]
+      timestamp = params[:timestamp]
+
+      if user_id.is_a?(Integer) && action == 'delete' && entity_type == 'todo' && entity_id.is_a?(Integer) && timestamp.is_a?(DateTime)
+        delete_service = TodoService::Delete.new(entity_id, current_resource_owner)
+        result = delete_service.call
+
+        if result[:success]
+          render json: { status: 201, message: "Audit log has been successfully created." }, status: :created
+        else
+          render json: { errors: result[:message] }, status: :unprocessable_entity
+        end
+      else
+        error_message = "Wrong format." unless user_id.is_a?(Integer) && entity_id.is_a?(Integer)
+        error_message = "Invalid action type." unless action == 'delete'
+        error_message = "Invalid entity type." unless entity_type == 'todo'
+        error_message = "Wrong date format." unless timestamp.is_a?(DateTime)
+        render json: { error: error_message }, status: :bad_request
+      end
+    rescue Pundit::NotAuthorizedError => e
+      render json: { error: e.message }, status: :unauthorized
     end
 
     # DELETE /api/todos/:id

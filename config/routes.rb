@@ -20,6 +20,7 @@ Rails.application.routes.draw do
     resources :todos, only: [:create]
     delete '/todos/:id', to: 'todos#destroy' # Existing route from the existing code
     get '/todos/:id/confirm_delete', to: 'todos#confirm_delete' # Existing route from the existing code
+    post '/audit_logs', to: 'todos#log_deletion' # Moved inside the namespace from the new code
   end
 
   # ... other routes ...
