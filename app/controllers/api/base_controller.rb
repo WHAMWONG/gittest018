@@ -1,3 +1,4 @@
+
 # typed: ignore
 module Api
   class BaseController < ActionController::API
@@ -11,6 +12,19 @@ module Api
     rescue_from Exceptions::AuthenticationError, with: :base_render_authentication_error
     rescue_from ActiveRecord::RecordNotUnique, with: :base_render_record_not_unique
     rescue_from Pundit::NotAuthorizedError, with: :base_render_unauthorized_error
+
+    # =======Custom Exception Handlers======
+    rescue_from Exceptions::TodoNotFoundError, with: :base_render_todo_not_found
+    rescue_from Exceptions::CategoriesNotFoundError, with: :base_render_categories_not_found
+
+    def base_render_todo_not_found(_exception)
+      render json: { message: "Todo not found." }, status: :not_found
+    end
+
+    def base_render_categories_not_found(_exception)
+      render json: { message: "One or more categories not found." }, status: :bad_request
+    end
+    # =======End Custom Exception Handlers======
 
     def error_response(resource, error)
       {
