@@ -1,7 +1,9 @@
 module Api
   class TodosController < Api::BaseController
-    before_action :doorkeeper_authorize!
+    before_action :doorkeeper_authorize!, except: [:validate]
+    before_action :set_todo, only: [:create_attachments]
 
+    # POST /api/todos
     def create
       todo_service = TodoService::Create.new(create_params)
 
@@ -20,6 +22,28 @@ module Api
       render json: { error: e.message }, status: :not_found
     rescue Pundit::NotAuthorizedError => e
       render json: { error: e.message }, status: :unauthorized
+    end
+
+    # POST /api/todos/:todo_id/attachments
+    def create_attachments
+      begin
+        file_paths = params.require(:file_paths)
+
+        raise ActionController::ParameterMissing, 'todo_id' unless params[:todo_id]
+        raise ActionController::ParameterMissing, 'file_paths' if file_paths.empty?
+
+        attachments = TodoService::AttachFiles.new(@todo.id, file_paths).call
+
+        if attachments.any?
+          render json: { status: 200, message: 'Files attached to todo successfully.' }, status: :ok
+        else
+          render json: { status: 422, message: 'No files were attached.' }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { status: 404, message: 'Todo not found.' }, status: :not_found
+      rescue ActionController::ParameterMissing => e
+        render json: { status: 400, message: e.message }, status: :bad_request
+      end
     end
 
     def validate
@@ -46,6 +70,10 @@ module Api
     end
 
     private
+
+    def set_todo
+      @todo = Todo.find(params[:todo_id])
+    end
 
     def create_params
       params.permit(
