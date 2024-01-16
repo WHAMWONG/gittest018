@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   # New route from the new code
   post '/api/todos/:todo_id/attachments', to: 'todos#create_attachments'
 
+  # New route from the new code
+  post '/api/todos/:todo_id/categories', to: 'api/todos#link_categories'
+
   # Existing namespace block from the existing code
   namespace :api do
     resources :todos, only: [:create]

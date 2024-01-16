@@ -1,7 +1,7 @@
 module Api
   class TodosController < Api::BaseController
-    before_action :doorkeeper_authorize!, except: [:validate]
-    before_action :set_todo, only: [:create_attachments]
+    before_action :doorkeeper_authorize!
+    before_action :set_todo, only: [:create_attachments, :link_categories]
 
     # POST /api/todos
     def create
@@ -46,6 +46,20 @@ module Api
       end
     end
 
+    # POST /api/todos/:todo_id/categories
+    def link_categories
+      category_ids = params.require(:category_ids)
+
+      begin
+        TodoCategoryService::Create.new(todo_id: @todo.id, category_ids: category_ids).execute
+        render json: { status: 200, message: 'Todo linked with categories successfully.' }, status: :ok
+      rescue ActiveRecord::RecordNotFound => e
+        render json: { error: e.message }, status: :not_found
+      rescue StandardError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+    end
+
     def validate
       validator = ValidateTodoDetailsService.new(
         title: params[:title],
@@ -85,6 +99,10 @@ module Api
         :is_recurring,
         :recurrence
       )
+    end
+
+    def todo_params
+      params.permit(:todo_id, category_ids: [])
     end
   end
 end
